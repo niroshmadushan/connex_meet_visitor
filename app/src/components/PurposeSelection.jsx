@@ -62,10 +62,10 @@ const PurposeSelection = () => {
         </Typography>
         <Grid container spacing={4} justifyContent="center">
           {[
-            { label: 'Meetings', icon: <MeetingRoom sx={{ fontSize: 50 }} />, purpose: 'meetings', bgColor: '#FF6F61' },
-            { label: 'Sessions', icon: <Event sx={{ fontSize: 50 }} />, purpose: 'sessions', bgColor: '#6B5B95' },
-            { label: 'Interview', icon: <Work sx={{ fontSize: 50 }} />, purpose: 'interview', bgColor: '#88B04B' },
-            { label: 'Services', icon: <Build sx={{ fontSize: 50 }} />, purpose: 'services', bgColor: '#F7CAC9' },
+            { label: 'Meetings', icon: <MeetingRoom sx={{ fontSize: 50 }} />, purpose: 'meetings', bgColor: '#1E90FF' },
+            { label: 'Sessions', icon: <Event sx={{ fontSize: 50 }} />, purpose: 'sessions', bgColor: '#32CD32' },
+            { label: 'Interview', icon: <Work sx={{ fontSize: 50 }} />, purpose: 'interview', bgColor: '#FF8C00' },
+            { label: 'Services', icon: <Build sx={{ fontSize: 50 }} />, purpose: 'services', bgColor: '#FF1493' },
           ].map((item, index) => (
             <Grid item xs={12} sm={6} md={6} key={index}>
               <Button
