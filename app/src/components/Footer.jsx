@@ -20,6 +20,7 @@ const FooterContainer = styled.footer`
 
 const DeveloperLogo = styled.img`
   height: 50px;
+  opacity: 0.5;
   border-radius: 8px; /* Adds rounded corners */
   margin-right: 10px; /* Optional: Adds some space between the logo and the text */
 `;

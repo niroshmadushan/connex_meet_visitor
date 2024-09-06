@@ -1,17 +1,41 @@
-// src/components/PurposeSelection.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Typography, Button, Paper, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { MeetingRoom, Event, Work, Build } from '@mui/icons-material'; // MUI icons
 import { motion } from 'framer-motion';
 import welcomeImage from '../assets/welcome-image.jpg';
+import welcomeVoice from '../assets/audio/welcome-voice.mp3'; // Import the voice clip
 
 const PurposeSelection = () => {
   const navigate = useNavigate();
 
+  // Play the audio 2 seconds after page load and stop it on navigation or unmount
+  useEffect(() => {
+    const audio = new Audio(welcomeVoice);
+
+    // Start playing the audio after 2 seconds
+    const timer = setTimeout(() => {
+      audio.play();
+    }, 100); 
+
+    // Cleanup function to stop the audio when navigating away or unmounting
+    return () => {
+      clearTimeout(timer); // Stop the timer
+      audio.pause();       // Pause the audio
+      audio.currentTime = 0; // Reset the audio to the beginning
+    };
+  }, []); // Run once when the component is mounted
+
+  // Navigate to MeetingDetailsPage if "meetings" is selected
   const handleSelection = (purpose) => {
-    console.log(`User selected: ${purpose}`);
-    // Add navigation logic or handle selection accordingly
+    if (purpose === 'meetings') {
+      navigate('/meeting-details');
+    } else if (purpose === 'sessions') {
+      navigate('/session-details'); // Navigate to new session page
+    } else {
+      console.log(`User selected: ${purpose}`);
+      // Handle other selections here
+    }
   };
 
   return (
