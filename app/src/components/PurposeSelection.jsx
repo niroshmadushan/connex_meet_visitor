@@ -29,15 +29,19 @@ const PurposeSelection = () => {
   // Navigate to MeetingDetailsPage if "meetings" is selected
   const handleSelection = (purpose) => {
     if (purpose === 'meetings') {
-      navigate('/meeting-details');
+      navigate('/meeting-details'); // Navigate to meeting details
     } else if (purpose === 'sessions') {
-      navigate('/session-details'); // Navigate to new session page
+      navigate('/session-details'); // Navigate to session details
+    } else if (purpose === 'interview') {
+      navigate('/interview-details'); // Navigate to interview details
+    } else if (purpose === 'services') {
+      navigate('/service-details'); // Navigate to service details
     } else {
       console.log(`User selected: ${purpose}`);
       // Handle other selections here
     }
   };
-
+  
   return (
     <Box
       sx={{
