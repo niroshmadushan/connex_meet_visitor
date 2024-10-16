@@ -1,152 +1,75 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  Grid,
-  TextField,
-  Avatar,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
-import { PhotoCamera, Edit, Person, Work, Email, Phone, Business } from '@mui/icons-material';
+import { Box, Typography, Paper, CircularProgress } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import APIConnection from '../config'; // API config file
 import welcomeImage from '../assets/welcome-image.jpg';
+import pleaseWaitVoice from '../assets/audio/clip2.mp3';
+import APIConnection from '../config'; // API config file
 
-const VisitorTeamPage = () => {
-  const [team, setTeam] = useState([]); // Store participants
-  const [openDialog, setOpenDialog] = useState(false); // Handle popup form visibility
-  const [profilePreview, setProfilePreview] = useState(null); // Preview uploaded photo
-  const [selectedMember, setSelectedMember] = useState(null); // Track selected member for editing
-  const { state } = useLocation(); // Get data from the previous page
-  const { selectedMeeting } = state || {};
-
-  const [newMember, setNewMember] = useState({
-    fullName: '',
-    email: '',
-    designation: '',
-    contactNo: '',
-    companyName: '',
-    photo: '',
-  });
-
+const PleaseWaitPage = () => {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const { selectedMeeting } = state || {}; // Get booking ID from state
+  const [status, setStatus] = useState(1); // Track status
 
-  // Fetch participants when the component mounts
   useEffect(() => {
-    fetchParticipants(selectedMeeting);
-  }, [selectedMeeting]);
+    const audio = new Audio(pleaseWaitVoice);
 
-  const fetchParticipants = async (bookingId) => {
-    try {
-      const response = await axios.get(`${APIConnection.mainapi}/connex-booking-participant/${bookingId}`);
-      const participants = Array.isArray(response.data) ? response.data : [response.data];
-      setTeam(participants);
-    } catch (error) {
-      console.error('Failed to fetch participants:', error);
-    }
-  };
+    // Play the audio after a 1-second delay
+    const audioTimer = setTimeout(() => {
+      audio.play();
+    }, 1000);
 
-  const handleFieldChange = (e) => {
-    setNewMember({ ...newMember, [e.target.name]: e.target.value });
-  };
+    // Polling function to check visitor status
+    const fetchStatus = async () => {
+      try {
+        const response = await axios.get(
+          `${APIConnection.mainapi}/visitor-info/${selectedMeeting}`, 
+          { headers: { 'Cache-Control': 'no-cache' } } // Prevent cached response
+        );
 
-  const handleProfilePictureChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePreview(reader.result);
-        setNewMember({ ...newMember, photo: reader.result });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+        const visitorData = response.data[0]; // Ensure data is received correctly
+        console.log('Visitor Data:', visitorData); // Debug: Log visitor data
 
-  const openMemberDialog = (member = null) => {
-    setSelectedMember(member);
-    if (member) {
-      setNewMember({
-        fullName: member.participant_name,
-        email: member.participant_email || '',
-        designation: member.designation || '',
-        contactNo: member.contact_no || '',
-        companyName: member.company_name || '',
-        photo: member.photo || '',
-      });
-      setProfilePreview(member.photo || null);
-    } else {
-      setNewMember({
-        fullName: '',
-        email: '',
-        designation: '',
-        contactNo: '',
-        companyName: '',
-        photo: '',
-      });
-      setProfilePreview(null);
-    }
-    setOpenDialog(true);
-  };
+        if (visitorData.status === 2) {
+          console.log('Status 2 found, stopping loop and navigating...');
+          clearInterval(interval); // Stop polling
+          
+          // Navigate to the success page
+          navigate('/registration-success', { replace: true });
 
-  const handleSaveMember = async () => {
-    if (!newMember.photo) {
-      alert('Image is required!');
-      return;
-    }
+          // Call the delete API after successful navigation
+          try {
+            await axios.post('http://192.168.13.6:3001/delete', {
+              bookingId: selectedMeeting,
+            });
+            console.log('Temporary data deleted successfully.');
+          } catch (deleteError) {
+            console.error('Failed to delete temporary data:', deleteError);
+          }
 
-    const payload = {
-      bookingId: selectedMeeting,
-      companyName: newMember.companyName,
-      fullName: newMember.fullName,
-      type: 'Visitor',
-      status: 'Active',
-      designation: newMember.designation,
-      email: newMember.email,
-      contactNo: newMember.contactNo,
-      image: newMember.photo,
-      reason: 'N/A',
+        } else if (visitorData.status === 1) {
+          setStatus(1); // Update status to pending
+        } else {
+          console.error('Unexpected status:', visitorData.status);
+        }
+      } catch (error) {
+        console.error('Error fetching visitor info:', error);
+      }
     };
 
-    try {
-      if (selectedMember) {
-        await axios.put(
-          `${APIConnection.mainapi}/visitor-profile-update/${selectedMember.participant_id}`,
-          payload
-        );
-        fetchParticipants(selectedMeeting);
-      } else {
-        const response = await axios.post(
-          `${APIConnection.mainapi}/connex-booking-addvisitors`,
-          payload
-        );
-        console.log('Participant added:', response.data);
-        fetchParticipants(selectedMeeting);
-      }
+    // Set up polling to check visitor status every second
+    const interval = setInterval(fetchStatus, 1000); // Poll every second
 
-      setOpenDialog(false);
-    } catch (error) {
-      console.error('Failed to save member:', error);
-      alert('Error: ' + error.response?.data?.message || 'Failed to add member');
-    }
-  };
-
-  const handleComplete = () => {
-    navigate('/please-wait');
-  };
+    // Cleanup: Clear timers and stop audio when component unmounts
+    return () => {
+      clearTimeout(audioTimer);
+      clearInterval(interval); // Stop polling on unmount
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, [selectedMeeting, navigate]); // Dependencies to trigger effect on mount
 
   return (
     <Box
@@ -156,6 +79,7 @@ const VisitorTeamPage = () => {
         justifyContent: 'center',
         minHeight: '100vh',
         position: 'relative',
+        overflow: 'hidden',
         backgroundImage: `url(${welcomeImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -166,7 +90,7 @@ const VisitorTeamPage = () => {
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          backgroundColor: 'rgba(18, 18, 18, 0.5)',
           backdropFilter: 'blur(8px)',
           zIndex: 1,
         },
@@ -174,153 +98,31 @@ const VisitorTeamPage = () => {
     >
       <Paper
         elevation={3}
+        component={motion.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         sx={{
+          position: 'relative',
+          zIndex: 2,
           padding: '40px',
           backgroundColor: 'rgba(29, 29, 29, 0.85)',
           borderRadius: '15px',
-          maxWidth: '1000px',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.7)',
+          textAlign: 'center',
+          maxWidth: '600px',
           width: '100%',
-          zIndex: 2,
         }}
       >
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="h5" sx={{ color: '#fff', textAlign: 'center', mb: 2 }}>
-              Visitor Team Information
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12}>
-            <TableContainer sx={{ maxHeight: '320px', overflowY: 'auto' }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Full Name</TableCell>
-                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Designation</TableCell>
-                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Email</TableCell>
-                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Company Name</TableCell>
-                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Contact No</TableCell>
-                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {team.length > 0 ? (
-                    team.map((member) => (
-                      <TableRow key={member.participant_id}>
-                        <TableCell sx={{ color: '#fff' }}>{member.participant_name}</TableCell>
-                        <TableCell sx={{ color: '#fff' }}>{member.designation || 'N/A'}</TableCell>
-                        <TableCell sx={{ color: '#fff' }}>{member.participant_email || 'N/A'}</TableCell>
-                        <TableCell sx={{ color: '#fff' }}>{member.company_name}</TableCell>
-                        <TableCell sx={{ color: '#fff' }}>{member.contact_no || 'N/A'}</TableCell>
-                        <TableCell>
-                          <IconButton color="primary" onClick={() => openMemberDialog(member)}>
-                            <Edit />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ color: '#fff' }}>
-                        No participants available.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Grid>
-
-          <Grid item xs={12} sx={{ textAlign: 'center', mt: 2 }}>
-            <Button
-              component={motion.button}
-              whileHover={{ scale: 1.1 }}
-              onClick={() => openMemberDialog()}
-              variant="contained"
-              color="primary"
-            >
-              Add Member
-            </Button>
-          </Grid>
-        </Grid>
-
-        <Button
-          onClick={handleComplete}
-          variant="contained"
-          color="success"
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        >
-          Complete
-        </Button>
-
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-          <DialogTitle>{selectedMember ? 'Edit Member' : 'Add New Member'}</DialogTitle>
-          <DialogContent>
-            <TextField
-              fullWidth
-              name="fullName"
-              label="Full Name"
-              value={newMember.fullName}
-              onChange={handleFieldChange}
-              sx={{ mb: 2 }}
-              InputProps={{ startAdornment: <Person /> }}
-            />
-            <TextField
-              fullWidth
-              name="email"
-              label="Email"
-              value={newMember.email}
-              onChange={handleFieldChange}
-              sx={{ mb: 2 }}
-              InputProps={{ startAdornment: <Email /> }}
-            />
-            <TextField
-              fullWidth
-              name="designation"
-              label="Designation"
-              value={newMember.designation}
-              onChange={handleFieldChange}
-              sx={{ mb: 2 }}
-              InputProps={{ startAdornment: <Work /> }}
-            />
-            <TextField
-              fullWidth
-              name="companyName"
-              label="Company Name"
-              value={newMember.companyName}
-              onChange={handleFieldChange}
-              sx={{ mb: 2 }}
-              InputProps={{ startAdornment: <Business /> }}
-            />
-            <TextField
-              fullWidth
-              name="contactNo"
-              label="Contact No"
-              value={newMember.contactNo}
-              onChange={handleFieldChange}
-              sx={{ mb: 2 }}
-              InputProps={{ startAdornment: <Phone /> }}
-            />
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-              <Avatar src={profilePreview} sx={{ width: 80, height: 80, mr: 2 }} />
-              <IconButton component="label">
-                <PhotoCamera />
-                <input hidden accept="image/*" type="file" onChange={handleProfilePictureChange} />
-              </IconButton>
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleSaveMember} variant="contained" color="primary">
-              Save
-            </Button>
-            <Button onClick={() => setOpenDialog(false)} variant="outlined" color="secondary">
-              Cancel
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <CircularProgress color="secondary" size={60} />
+        <Typography variant="h5" sx={{ color: '#fff', mt: 3 }}>
+          Please wait for administration response...
+        </Typography>
+        <Typography variant="body1" sx={{ color: '#fff', mt: 1 }}>
+          Checking status: {status === 1 ? 'Pending' : 'Success'}
+        </Typography>
       </Paper>
     </Box>
   );
 };
 
-export default VisitorTeamPage;
+export default PleaseWaitPage;
