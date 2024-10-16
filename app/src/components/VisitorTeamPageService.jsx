@@ -124,9 +124,31 @@ const VisitorTeamPage = () => {
     setProfilePreview(null);
   };
 
-  const handleComplete = () => {
-    navigate('/please-wait');
+ const handleComplete = async () => {
+  const payload = {
+    bookingId: '12345', // Replace with actual booking ID (you can dynamically get it)
+    time: new Date().toLocaleTimeString(), // Capture current time
+    status: 'Pending', // Example status; modify as needed
+    date: new Date().toLocaleDateString(), // Capture current date
   };
+
+  try {
+    // Send POST request to the backend API
+    const response = await axios.post(
+      `${APIConnection.mainapi}/connex-booking-addvisitorinformation`,
+      payload
+    );
+
+    console.log('Visitor Information Added:', response.data);
+
+    // Redirect to the /please-wait page on success
+    navigate('/please-wait');
+  } catch (error) {
+    console.error('Failed to add visitor information:', error);
+    alert('Error: ' + (error.response?.data?.message || 'Failed to add visitor information'));
+  }
+};
+
 
   return (
     <Box
@@ -341,6 +363,8 @@ const VisitorTeamPage = () => {
             </Button>
           </Grid>
         </Grid>
+        
+
 
         {/* Dialog for Editing Team Member */}
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>

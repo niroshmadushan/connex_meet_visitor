@@ -1,34 +1,71 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper, CircularProgress } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import welcomeImage from '../assets/welcome-image.jpg';
-import pleaseWaitVoice from '../assets/audio/clip2.mp3'; // Voice clip for this page
+import pleaseWaitVoice from '../assets/audio/clip2.mp3';
+import APIConnection from '../config'; // API config file
 
 const PleaseWaitPage = () => {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const { selectedMeeting } = state || {}; // Get booking ID from state
+  const [status, setStatus] = useState(1); // Track status
 
   useEffect(() => {
     const audio = new Audio(pleaseWaitVoice);
 
-    // Start playing the audio after 1 second
-    const timer = setTimeout(() => {
+    // Play the audio after a 1-second delay
+    const audioTimer = setTimeout(() => {
       audio.play();
-    }, 1000); 
+    }, 1000);
 
-    // Set a timer to navigate to the registration success page after 10 seconds
-    const navigateTimer = setTimeout(() => {
-      navigate('/registration-success');
-    }, 10000); // 10 seconds
+    // Polling function to check visitor status
+    const fetchStatus = async () => {
+      try {
+        const response = await axios.get(
+          `${APIConnection.mainapi}/visitor-info/${selectedMeeting}`, 
+          { headers: { 'Cache-Control': 'no-cache' } } // Prevent cached response
+        );
 
-    // Cleanup: stop audio and timers on unmount
+        const visitorData = response.data[0]; // Ensure data is received correctly
+        console.log('Visitor Data:', visitorData); // Debug: Log visitor data
+
+        if (visitorData.status === 2) {
+          console.log('Status 2 found, stopping loop and navigating...');
+          clearInterval(interval); 
+          // Stop polling
+          try {
+            await axios.post(`${APIConnection.mainapi}/deleteData`, {
+              bookingId: selectedMeeting,
+            });
+            console.log('Temporary data deleted successfully.');
+          } catch (deleteError) {
+            console.error('Failed to delete temporary data:', deleteError);
+          }
+          navigate('/registration-success'); // Redirect to success page
+        } else if (visitorData.status === 1) {
+          setStatus(1); // Update status to pending
+        } else {
+          console.error('Unexpected status:', visitorData.status);
+        }
+      } catch (error) {
+        console.error('Error fetching visitor info:', error);
+      }
+    };
+
+    // Set up polling to check visitor status every second
+    const interval = setInterval(fetchStatus, 1000); // Poll every second
+
+    // Cleanup: Clear timers and stop audio when component unmounts
     return () => {
-      clearTimeout(timer);
-      clearTimeout(navigateTimer);
+      clearTimeout(audioTimer);
+      clearInterval(interval); // Stop polling on unmount
       audio.pause();
       audio.currentTime = 0;
     };
-  }, [navigate]);
+  }, [selectedMeeting, navigate]); // Dependencies to trigger effect on mount
 
   return (
     <Box
@@ -75,6 +112,9 @@ const PleaseWaitPage = () => {
         <CircularProgress color="secondary" size={60} />
         <Typography variant="h5" sx={{ color: '#fff', mt: 3 }}>
           Please wait for administration response...
+        </Typography>
+        <Typography variant="body1" sx={{ color: '#fff', mt: 1 }}>
+          Checking status: {status === 1 ? 'Pending' : 'Success'}
         </Typography>
       </Paper>
     </Box>

@@ -1,48 +1,91 @@
-// src/components/SessionDetailsPage.jsx
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Grid, MenuItem, Select, FormControl, InputLabel, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Button, Paper, Grid, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import welcomeImage from '../assets/welcome-image.jpg';
-import sessionVoice from '../assets/audio/session-voice.mp3'; // Add voice clip
+import meetingVoice from '../assets/audio/meeting-voice1.mp3';
+import APIConnection from '../config';
+import axios from 'axios';
 
-// Sample company and service data
-const companies = ['Tech Corp', 'Global Solutions', 'Innovate Inc.'];
-const services = ['Consulting', 'Development', 'Support', 'Training'];
-
-const SessionDetailsPage = () => {
+const MeetingDetailsPage = () => {
+  const [companies, setCompanies] = useState([]); // For company data
+  const [meetings, setMeetings] = useState([]); // For meeting data of the selected company
   const [selectedCompany, setSelectedCompany] = useState('');
-  const [selectedService, setSelectedService] = useState('');
+  const [selectedMeeting, setSelectedMeeting] = useState('');
   const navigate = useNavigate();
 
-  // Play the voice clip after 2 seconds
+  // Fetch company data on component mount
   useEffect(() => {
-    const audio = new Audio(sessionVoice);
-    const timer = setTimeout(() => {
-      audio.play();
-    }, 2000);
-
-    // Clean up audio when navigating away or unmounting
-    return () => {
-      clearTimeout(timer);
-      audio.pause();
-      audio.currentTime = 0;
-    };
+    fetchCompanies();
   }, []);
 
+  // Fetch company data from API
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(`${APIConnection.mainapi}/session`, { withCredentials: true });
+      setCompanies(response.data?.data || []); // Ensure we set an array even if the data is missing
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+    }
+  };
+
+  // Fetch meetings for the selected company
+  const fetchMeetings = async (companyName) => {
+    try {
+      const response = await axios.post(
+        `${APIConnection.mainapi}/connex-booking-employees`,
+        { cname: companyName }, // Body of the request
+        {
+          withCredentials: true, // Include credentials if needed
+        }
+      );
+  
+      setMeetings(response.data || []); // Ensure fallback to an empty array if no data
+    } catch (error) {
+      console.error('Failed to fetch meetings:', error);
+    }
+  };
+  
+
+  // Handle company selection change
+  const handleCompanyChange = (event) => {
+    const companyName = event.target.value;
+    setSelectedCompany(companyName);
+    fetchMeetings(companyName); 
+    console.log(meetings);// Fetch meetings for the selected company
+  };
+
+  // Handle meeting selection change
+  const handleMeetingChange = (event) => {
+    setSelectedMeeting(event.target.value);
+  };
+
+  // Handle navigation to the confirmation page
   const handleNextClick = () => {
-    if (!selectedCompany || !selectedService) {
-      alert('Please select both a company and a service.');
+    if (!selectedCompany || !selectedMeeting) {
+      alert('Please select both a company and a meeting.');
       return;
     }
-    // Navigate to the next page
-    navigate('/session-confirmation', {
+    // Navigate to the confirmation page with selected data
+    navigate('/meeting-confirmation', {
       state: {
         selectedCompany,
-        selectedService,
+        selectedMeeting,
       },
     });
   };
+
+  // Play audio on component mount and stop on unmount
+  useEffect(() => {
+    const audio = new Audio(meetingVoice);
+    const timer = setTimeout(() => audio.play(), 1000); // Play after 1 second
+
+    return () => {
+      clearTimeout(timer);
+      audio.pause();
+      audio.currentTime = 0; // Reset audio
+    };
+  }, []);
 
   return (
     <Box
@@ -89,32 +132,34 @@ const SessionDetailsPage = () => {
           Session Details
         </Typography>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} justifyContent="center">
           <Grid item xs={12}>
             <FormControl fullWidth variant="outlined" sx={{ textAlign: 'left' }}>
               <InputLabel>Company Name</InputLabel>
-              <Select value={selectedCompany} onChange={(e) => setSelectedCompany(e.target.value)} label="Company Name">
+              <Select value={selectedCompany} onChange={handleCompanyChange} label="Company Name">
                 {companies.map((company, index) => (
-                  <MenuItem key={index} value={company}>
-                    {company}
+                  <MenuItem key={index} value={company.company_name}>
+                    {company.company_name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
 
-          <Grid item xs={12}>
-            <FormControl fullWidth variant="outlined" sx={{ textAlign: 'left' }}>
-              <InputLabel>Service Name</InputLabel>
-              <Select value={selectedService} onChange={(e) => setSelectedService(e.target.value)} label="Service Name">
-                {services.map((service, index) => (
-                  <MenuItem key={index} value={service}>
-                    {service}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          {selectedCompany && (
+            <Grid item xs={12}>
+              <FormControl fullWidth variant="outlined" sx={{ textAlign: 'left' }}>
+                <InputLabel>Meeting With</InputLabel>
+                <Select value={selectedMeeting} onChange={handleMeetingChange} label="Meeting With">
+                  {meetings.map((meeting, index) => (
+                    <MenuItem key={index} value={meeting.booking_id}>
+                      {meeting.employee_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
 
           <Grid item xs={12}>
             <Button
@@ -132,7 +177,7 @@ const SessionDetailsPage = () => {
                 transition: 'all 0.3s ease-in-out',
                 mt: 2,
               }}
-              disabled={!selectedCompany || !selectedService} // Disable until both are selected
+              disabled={!selectedCompany || !selectedMeeting} // Disable until both are selected
             >
               Next
             </Button>
@@ -143,4 +188,4 @@ const SessionDetailsPage = () => {
   );
 };
 
-export default SessionDetailsPage;
+export default MeetingDetailsPage;

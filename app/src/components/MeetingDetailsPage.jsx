@@ -2,55 +2,71 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button, Paper, Grid, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import welcomeImage from '../assets/welcome-image.jpg'; // Same background as PurposeSelection
-import meetingVoice from '../assets/audio/meeting-voice1.mp3'; // Short voice clip for this page
-
-// Sample Data for Companies and Meetings
-const companies = {
-  'Tech Corp': ['John Smith', 'Development Team', 'Project Lead'],
-  'Global Solutions': ['Sara White', 'Operations Team', 'HR Manager'],
-  'Innovate Inc.': ['Michael Brown', 'Sales Team', 'Product Manager'],
-};
+import welcomeImage from '../assets/welcome-image.jpg';
+import meetingVoice from '../assets/audio/meeting-voice1.mp3';
+import APIConnection from '../config';
+import axios from 'axios';
 
 const MeetingDetailsPage = () => {
+  const [companies, setCompanies] = useState([]); // For company data
+  const [meetings, setMeetings] = useState([]); // For meeting data of the selected company
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedMeeting, setSelectedMeeting] = useState('');
   const navigate = useNavigate();
 
-  // Play the audio 1 second after page load and stop it on navigation or unmount
+  // Fetch company data on component mount
   useEffect(() => {
-    const audio = new Audio(meetingVoice);
+    fetchCompanies();
+  }, []);
 
-    // Start playing the audio after 1 second
-    const timer = setTimeout(() => {
-      audio.play();
-    }, 1000); // Delay of 1 second
-
-    // Cleanup function to stop the audio when navigating away or unmounting
-    return () => {
-      clearTimeout(timer); // Stop the timer
-      audio.pause();       // Pause the audio
-      audio.currentTime = 0; // Reset the audio to the beginning
-    };
-  }, []); // Run once when the component is mounted
-
-  const handleCompanyChange = (event) => {
-    setSelectedCompany(event.target.value);
-    setSelectedMeeting(''); // Reset meeting selection when a new company is chosen
+  // Fetch company data from API
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(`${APIConnection.mainapi}/homepage`, { withCredentials: true });
+      setCompanies(response.data?.data || []); // Ensure we set an array even if the data is missing
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+    }
   };
 
+  // Fetch meetings for the selected company
+  const fetchMeetings = async (companyName) => {
+    try {
+      const response = await axios.post(
+        `${APIConnection.mainapi}/connex-booking-employees`,
+        { cname: companyName }, // Body of the request
+        {
+          withCredentials: true, // Include credentials if needed
+        }
+      );
+  
+      setMeetings(response.data || []); // Ensure fallback to an empty array if no data
+    } catch (error) {
+      console.error('Failed to fetch meetings:', error);
+    }
+  };
+  
+
+  // Handle company selection change
+  const handleCompanyChange = (event) => {
+    const companyName = event.target.value;
+    setSelectedCompany(companyName);
+    fetchMeetings(companyName); 
+    console.log(meetings);// Fetch meetings for the selected company
+  };
+
+  // Handle meeting selection change
   const handleMeetingChange = (event) => {
     setSelectedMeeting(event.target.value);
   };
 
+  // Handle navigation to the confirmation page
   const handleNextClick = () => {
     if (!selectedCompany || !selectedMeeting) {
-      // Add validation for empty fields
       alert('Please select both a company and a meeting.');
       return;
     }
-
-    // Navigate to the confirmation page and pass selected data
+    // Navigate to the confirmation page with selected data
     navigate('/meeting-confirmation', {
       state: {
         selectedCompany,
@@ -58,6 +74,18 @@ const MeetingDetailsPage = () => {
       },
     });
   };
+
+  // Play audio on component mount and stop on unmount
+  useEffect(() => {
+    const audio = new Audio(meetingVoice);
+    const timer = setTimeout(() => audio.play(), 1000); // Play after 1 second
+
+    return () => {
+      clearTimeout(timer);
+      audio.pause();
+      audio.currentTime = 0; // Reset audio
+    };
+  }, []);
 
   return (
     <Box
@@ -109,9 +137,9 @@ const MeetingDetailsPage = () => {
             <FormControl fullWidth variant="outlined" sx={{ textAlign: 'left' }}>
               <InputLabel>Company Name</InputLabel>
               <Select value={selectedCompany} onChange={handleCompanyChange} label="Company Name">
-                {Object.keys(companies).map((company, index) => (
-                  <MenuItem key={index} value={company}>
-                    {company}
+                {companies.map((company, index) => (
+                  <MenuItem key={index} value={company.company_name}>
+                    {company.company_name}
                   </MenuItem>
                 ))}
               </Select>
@@ -121,11 +149,11 @@ const MeetingDetailsPage = () => {
           {selectedCompany && (
             <Grid item xs={12}>
               <FormControl fullWidth variant="outlined" sx={{ textAlign: 'left' }}>
-                <InputLabel>Meeting with</InputLabel>
-                <Select value={selectedMeeting} onChange={handleMeetingChange} label="Meeting with">
-                  {companies[selectedCompany].map((meeting, index) => (
-                    <MenuItem key={index} value={meeting}>
-                      {meeting}
+                <InputLabel>Meeting With</InputLabel>
+                <Select value={selectedMeeting} onChange={handleMeetingChange} label="Meeting With">
+                  {meetings.map((meeting, index) => (
+                    <MenuItem key={index} value={meeting.booking_id}>
+                      {meeting.employee_name}
                     </MenuItem>
                   ))}
                 </Select>

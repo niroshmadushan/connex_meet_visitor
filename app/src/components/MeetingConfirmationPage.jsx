@@ -1,25 +1,43 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box, Typography, Button, Paper, Grid } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import welcomeImage from '../assets/welcome-image.jpg';
-import voiceClip from '../assets/audio/meeting-confirmation-voice.mp3'; // Import your voice file
+import voiceClip from '../assets/audio/meeting-confirmation-voice.mp3';
+import APIConnection from '../config';
+import axios from 'axios';
 
 const MeetingConfirmationPage = () => {
   const { state } = useLocation(); // Get the data passed from MeetingDetailsPage
-  const { selectedCompany, selectedMeeting } = state || {};
+  const { selectedCompany, selectedMeeting } = state || {}; // Use fallback in case state is null/undefined
+  const [Meeting, setMeeting] = useState([]); // Correctly initialize with useState
   const navigate = useNavigate();
   const audioRef = useRef(null); // Reference to the audio element
 
-  // Play voice clip after 2 seconds when the component mounts
+  // Fetch meeting details based on selectedMeeting ID
+  const fetchMeetings = async (id) => {
+    try {
+      const response = await axios.get(`${APIConnection.mainapi}/connex-booking-meets/${id}`, {
+        withCredentials: true,
+      });
+      setMeeting(response.data || []); // Ensure fallback to an empty array
+    } catch (error) {
+      console.error('Failed to fetch meetings:', error);
+      setMeeting([]); // Set empty array in case of error
+    }
+  };
+
   useEffect(() => {
+    if (selectedMeeting) {
+      fetchMeetings(selectedMeeting); // Fetch meetings only if a meeting ID exists
+    }
+    
     const timer = setTimeout(() => {
       if (audioRef.current) {
         audioRef.current.play();
       }
-    }, 100); // Delay of 2 seconds
+    }, 1000); // Delay of 1 second
 
-    // Stop the audio when navigating away
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -27,7 +45,7 @@ const MeetingConfirmationPage = () => {
       }
       clearTimeout(timer);
     };
-  }, []);
+  }, [selectedMeeting]); // Depend on selectedMeeting
 
   const handleNextClick = () => {
     navigate('/visitor-team', { state: { selectedCompany, selectedMeeting } });
@@ -79,30 +97,35 @@ const MeetingConfirmationPage = () => {
         </Typography>
 
         <Grid container spacing={3} justifyContent="center">
-          <Grid item xs={12}>
-            <Typography variant="h6" color="primary">Company:</Typography>
-            <Typography variant="body1">{selectedCompany}</Typography>
-          </Grid>
+          {Meeting.length > 0 ? (
+            Meeting.map((met, index) => (
+              <React.Fragment key={index}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" color="primary">Company:</Typography>
+                  <Typography variant="body1">{selectedCompany}</Typography>
+                </Grid>
 
-          <Grid item xs={12}>
-            <Typography variant="h6" color="primary">Meeting with:</Typography>
-            <Typography variant="body1">{selectedMeeting}</Typography>
-          </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="h6" color="primary">Meeting Title:</Typography>
+                  <Typography variant="body1">{met.meeting_title}</Typography>
+                </Grid>
 
-          <Grid item xs={12}>
-            <Typography variant="h6" color="primary">Time:</Typography>
-            <Typography variant="body1">2:00 PM - 3:00 PM</Typography> {/* Replace with dynamic time */}
-          </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="h6" color="primary">Time:</Typography>
+                  <Typography variant="body1">{met.start_time} - {met.end_time}</Typography> {/* Replace with dynamic time */}
+                </Grid>
 
-          <Grid item xs={12}>
-            <Typography variant="h6" color="primary">Conducted by:</Typography>
-            <Typography variant="body1">John Doe</Typography> {/* Replace with dynamic conductor */}
-          </Grid>
-
-          <Grid item xs={12}>
-            <Typography variant="h6" color="primary">Participants:</Typography>
-            <Typography variant="body1">Development Team, HR</Typography> {/* Replace with dynamic participants */}
-          </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="h6" color="primary">Conducted by:</Typography>
+                  <Typography variant="body1">{met.employee_name}</Typography> {/* Replace with dynamic conductor */}
+                </Grid>
+              </React.Fragment>
+            ))
+          ) : (
+            <Typography variant="body1" color="error">
+              No meeting details available.
+            </Typography>
+          )}
 
           <Grid item xs={12}>
             <Button
@@ -128,7 +151,6 @@ const MeetingConfirmationPage = () => {
 
         {/* Voice Clip */}
         <audio ref={audioRef} src={voiceClip} />
-
       </Paper>
     </Box>
   );

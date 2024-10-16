@@ -1,64 +1,91 @@
-import React, { useEffect, useRef, useState} from 'react';
-import { Box, Typography, Paper, Grid, MenuItem, Select, FormControl, InputLabel, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Button, Paper, Grid, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import welcomeImage from '../assets/welcome-image.jpg';
-import voiceClip from '../assets/audio/interview.mp3'; 
+import meetingVoice from '../assets/audio/meeting-voice1.mp3';
+import APIConnection from '../config';
+import axios from 'axios';
 
-// Sample Data for Departments and Interviewees
-const departments = {
-  'HR Department': [{ name: 'John Smith', id: 'HR01' }, { name: 'Alice Johnson', id: 'HR02' }],
-  'IT Department': [{ name: 'Michael Brown', id: 'IT01' }, { name: 'Sara White', id: 'IT02' }],
-  'Sales Department': [{ name: 'David Lee', id: 'Sales01' }, { name: 'Sophia Green', id: 'Sales02' }],
-};
-
-
-const InterviewDetailsPage = () => {
-  const [selectedDepartment, setSelectedDepartment] = useState('');
-  const [selectedInterviewee, setSelectedInterviewee] = useState('');
+const MeetingDetailsPage = () => {
+  const [companies, setCompanies] = useState([]); // For company data
+  const [meetings, setMeetings] = useState([]); // For meeting data of the selected company
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedMeeting, setSelectedMeeting] = useState('');
   const navigate = useNavigate();
 
-  const audioRef = useRef(null);
-
+  // Fetch company data on component mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (audioRef.current) {
-        audioRef.current.play();
-      }
-    }, 100); // Delay of 2 seconds
-
-    // Stop the audio when navigating away
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-      clearTimeout(timer);
-    };
+    fetchCompanies();
   }, []);
 
-  const handleDepartmentChange = (event) => {
-    setSelectedDepartment(event.target.value);
-    setSelectedInterviewee(''); // Reset interviewee when department changes
+  // Fetch company data from API
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(`${APIConnection.mainapi}/interviews`, { withCredentials: true });
+      setCompanies(response.data?.data || []); // Ensure we set an array even if the data is missing
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+    }
   };
 
-  const handleIntervieweeChange = (event) => {
-    setSelectedInterviewee(event.target.value);
+  // Fetch meetings for the selected company
+  const fetchMeetings = async (companyName) => {
+    try {
+      const response = await axios.post(
+        `${APIConnection.mainapi}/connex-booking-employees`,
+        { cname: companyName }, // Body of the request
+        {
+          withCredentials: true, // Include credentials if needed
+        }
+      );
+  
+      setMeetings(response.data || []); // Ensure fallback to an empty array if no data
+    } catch (error) {
+      console.error('Failed to fetch meetings:', error);
+    }
+  };
+  
+
+  // Handle company selection change
+  const handleCompanyChange = (event) => {
+    const companyName = event.target.value;
+    setSelectedCompany(companyName);
+    fetchMeetings(companyName); 
+    console.log(meetings);// Fetch meetings for the selected company
   };
 
+  // Handle meeting selection change
+  const handleMeetingChange = (event) => {
+    setSelectedMeeting(event.target.value);
+  };
+
+  // Handle navigation to the confirmation page
   const handleNextClick = () => {
-    if (!selectedDepartment || !selectedInterviewee) {
-      alert('Please select both department and interviewee.');
+    if (!selectedCompany || !selectedMeeting) {
+      alert('Please select both a company and a meeting.');
       return;
     }
-
-    navigate('/interview-confirmation', {
+    // Navigate to the confirmation page with selected data
+    navigate('/meeting-confirmation', {
       state: {
-        selectedDepartment,
-        selectedInterviewee,
+        selectedCompany,
+        selectedMeeting,
       },
     });
   };
+
+  // Play audio on component mount and stop on unmount
+  useEffect(() => {
+    const audio = new Audio(meetingVoice);
+    const timer = setTimeout(() => audio.play(), 1000); // Play after 1 second
+
+    return () => {
+      clearTimeout(timer);
+      audio.pause();
+      audio.currentTime = 0; // Reset audio
+    };
+  }, []);
 
   return (
     <Box
@@ -106,29 +133,27 @@ const InterviewDetailsPage = () => {
         </Typography>
 
         <Grid container spacing={3} justifyContent="center">
-          {/* Department Dropdown */}
           <Grid item xs={12}>
             <FormControl fullWidth variant="outlined" sx={{ textAlign: 'left' }}>
-              <InputLabel>Department</InputLabel>
-              <Select value={selectedDepartment} onChange={handleDepartmentChange} label="Department">
-                {Object.keys(departments).map((department, index) => (
-                  <MenuItem key={index} value={department}>
-                    {department}
+              <InputLabel>Interview Designation</InputLabel>
+              <Select value={selectedCompany} onChange={handleCompanyChange} label="Interview Designation">
+                {companies.map((company, index) => (
+                  <MenuItem key={index} value={company.company_name}>
+                    {company.company_name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
 
-          {/* Interviewee Dropdown */}
-          {selectedDepartment && (
+          {selectedCompany && (
             <Grid item xs={12}>
               <FormControl fullWidth variant="outlined" sx={{ textAlign: 'left' }}>
-                <InputLabel>Interviewee</InputLabel>
-                <Select value={selectedInterviewee} onChange={handleIntervieweeChange} label="Interviewee">
-                  {departments[selectedDepartment].map((interviewee, index) => (
-                    <MenuItem key={index} value={interviewee}>
-                      {interviewee.name} ({interviewee.id})
+                <InputLabel>Interview With</InputLabel>
+                <Select value={selectedMeeting} onChange={handleMeetingChange} label="Interview With">
+                  {meetings.map((meeting, index) => (
+                    <MenuItem key={index} value={meeting.booking_id}>
+                      {meeting.employee_name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -136,11 +161,10 @@ const InterviewDetailsPage = () => {
             </Grid>
           )}
 
-          {/* Next Button */}
           <Grid item xs={12}>
             <Button
               component={motion.button}
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.1, boxShadow: '0px 0px 15px rgba(255, 255, 255, 0.5)', borderRadius: '50px' }}
               whileTap={{ scale: 0.95 }}
               onClick={handleNextClick}
               variant="contained"
@@ -153,15 +177,15 @@ const InterviewDetailsPage = () => {
                 transition: 'all 0.3s ease-in-out',
                 mt: 2,
               }}
+              disabled={!selectedCompany || !selectedMeeting} // Disable until both are selected
             >
               Next
             </Button>
           </Grid>
         </Grid>
-        <audio ref={audioRef} src={voiceClip} />
       </Paper>
     </Box>
   );
 };
 
-export default InterviewDetailsPage;
+export default MeetingDetailsPage;

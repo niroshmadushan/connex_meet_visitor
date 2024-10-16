@@ -12,7 +12,6 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  InputAdornment,
   TableHead,
   TableRow,
   Dialog,
@@ -23,7 +22,7 @@ import {
 import { PhotoCamera, Edit, Person, Work, Email, Phone, Business } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios'; 
+import axios from 'axios';
 import APIConnection from '../config'; // API config file
 import welcomeImage from '../assets/welcome-image.jpg';
 
@@ -33,8 +32,8 @@ const VisitorTeamPage = () => {
   const [profilePreview, setProfilePreview] = useState(null); // Preview uploaded photo
   const [selectedMember, setSelectedMember] = useState(null); // Track selected member for editing
   const { state } = useLocation(); // Get data from the previous page
-  const { selectedMeeting } = state || {}; 
-  const [meetid,setmeetid] =useState();
+  const { selectedMeeting } = state || {};
+
   const [newMember, setNewMember] = useState({
     fullName: '',
     email: '',
@@ -49,15 +48,11 @@ const VisitorTeamPage = () => {
   // Fetch participants when the component mounts
   useEffect(() => {
     fetchParticipants(selectedMeeting);
-    setmeetid(selectedMeeting)
   }, [selectedMeeting]);
 
-  // API call to fetch participants
   const fetchParticipants = async (bookingId) => {
     try {
       const response = await axios.get(`${APIConnection.mainapi}/connex-booking-participant/${bookingId}`);
-      console.log('Fetched participants:', response.data);
-
       const participants = Array.isArray(response.data) ? response.data : [response.data];
       setTeam(participants);
     } catch (error) {
@@ -65,25 +60,22 @@ const VisitorTeamPage = () => {
     }
   };
 
-  // Handle form input changes
   const handleFieldChange = (e) => {
     setNewMember({ ...newMember, [e.target.name]: e.target.value });
   };
 
-  // Convert image to Base64 and store it in state
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfilePreview(reader.result); // Preview the uploaded image
-        setNewMember({ ...newMember, photo: reader.result }); // Store Base64 string in state
+        setProfilePreview(reader.result);
+        setNewMember({ ...newMember, photo: reader.result });
       };
-      reader.readAsDataURL(file); // Convert the file to Base64
+      reader.readAsDataURL(file);
     }
   };
 
-  // Open the dialog for adding or editing a member
   const openMemberDialog = (member = null) => {
     setSelectedMember(member);
     if (member) {
@@ -93,9 +85,9 @@ const VisitorTeamPage = () => {
         designation: member.designation || '',
         contactNo: member.contact_no || '',
         companyName: member.company_name || '',
-        photo: member.photo || '', // Use the stored Base64 photo
+        photo: member.photo || '',
       });
-      setProfilePreview(member.photo || null); // Preview the photo
+      setProfilePreview(member.photo || null);
     } else {
       setNewMember({
         fullName: '',
@@ -110,81 +102,52 @@ const VisitorTeamPage = () => {
     setOpenDialog(true);
   };
 
-
-  
-  // Add or update a team member, including the photo in Base64 format
   const handleSaveMember = async () => {
+    if (!newMember.photo) {
+      alert('Image is required!');
+      return;
+    }
+
     const payload = {
-      bookingId: selectedMeeting, // Include bookingId from meeting context
+      bookingId: selectedMeeting,
       companyName: newMember.companyName,
       fullName: newMember.fullName,
-      type: "Visitor", // Assuming static value (you can adjust)
-      status: "Active", // Assuming static status
+      type: 'Visitor',
+      status: 'Active',
       designation: newMember.designation,
       email: newMember.email,
       contactNo: newMember.contactNo,
-      image: newMember.photo, // Base64 photo
-      reason: "N/A", // Temporary placeholder (adjust as needed)
+      image: newMember.photo,
+      reason: 'N/A',
     };
-  
+
     try {
       if (selectedMember) {
-        // Update logic remains the same if editing an existing member
         await axios.put(
-          `${APIConnection.mainapi}/visitor-profile-update/${selectedMember.participant_id}`, 
+          `${APIConnection.mainapi}/visitor-profile-update/${selectedMember.participant_id}`,
           payload
-        );
-  
-        const updatedTeam = team.map((member) =>
-          member.participant_id === selectedMember.participant_id
-            ? { ...member, ...newMember, participant_name: newMember.fullName }
-            : member
         );
         fetchParticipants(selectedMeeting);
       } else {
-        // Add new participant via POST request
         const response = await axios.post(
-         `${APIConnection.mainapi}/connex-booking-addvisitors`,
+          `${APIConnection.mainapi}/connex-booking-addvisitors`,
           payload
         );
-  
         console.log('Participant added:', response.data);
-  
-        // Refresh participants list after successful addition
         fetchParticipants(selectedMeeting);
       }
-  
-      setOpenDialog(false); // Close dialog on success
+
+      setOpenDialog(false);
     } catch (error) {
       console.error('Failed to save member:', error);
       alert('Error: ' + error.response?.data?.message || 'Failed to add member');
     }
   };
-  const handleComplete = async () => {
-    const payload = {
-      bookingId: selectedMeeting, // Replace with actual booking ID (you can dynamically get it)
-      time: new Date().toLocaleTimeString(), // Capture current time
-      status: 1, // Example status; modify as needed
-      date: new Date().toLocaleDateString(), // Capture current date
-    };
-  
-    try {
-      // Send POST request to the backend API
-      const response = await axios.post(
-        `${APIConnection.mainapi}/connex-booking-addvisitorinformation`,
-        payload
-      );
-  
-      console.log('Visitor Information Added:', response.data);
-  
-      // Redirect to the /please-wait page on success
-      navigate('/please-wait', { state: { selectedMeeting } });
-    } catch (error) {
-      console.error('Failed to add visitor information:', error);
-      alert('Error: ' + (error.response?.data?.message || 'Failed to add visitor information'));
-    }
+
+  const handleComplete = () => {
+    navigate('/please-wait');
   };
-  
+
   return (
     <Box
       sx={{
@@ -223,7 +186,7 @@ const VisitorTeamPage = () => {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="h5" sx={{ color: '#fff', textAlign: 'center', mb: 2 }}>
-               Team Information
+              Visitor Team Information
             </Typography>
           </Grid>
 
@@ -280,26 +243,64 @@ const VisitorTeamPage = () => {
             </Button>
           </Grid>
         </Grid>
+
         <Button
-              component={motion.button}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleComplete}
-              variant="contained"
-              color="secondary"
-              sx={{ width: '50%', mt: 2, marginLeft: '25%' }}
-            >
-              Complete
-            </Button>
+          onClick={handleComplete}
+          variant="contained"
+          color="success"
+          sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        >
+          Complete
+        </Button>
 
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
           <DialogTitle>{selectedMember ? 'Edit Member' : 'Add New Member'}</DialogTitle>
           <DialogContent>
-            <TextField fullWidth name="fullName" label="Full Name" value={newMember.fullName} onChange={handleFieldChange} sx={{ mb: 2 }} InputProps={{ startAdornment: <Person /> }} />
-            <TextField fullWidth name="email" label="Email" value={newMember.email} onChange={handleFieldChange} sx={{ mb: 2 }} InputProps={{ startAdornment: <Email /> }} />
-            <TextField fullWidth name="designation" label="Designation" value={newMember.designation} onChange={handleFieldChange} sx={{ mb: 2 }} InputProps={{ startAdornment: <Work /> }} />
-            <TextField fullWidth name="companyName" label="Company Name" value={newMember.companyName} onChange={handleFieldChange} sx={{ mb: 2 }} InputProps={{ startAdornment: <Business /> }} />
-            <TextField fullWidth name="contactNo" label="Contact No" value={newMember.contactNo} onChange={handleFieldChange} sx={{ mb: 2 }} InputProps={{ startAdornment: <Phone /> }} />
+            <TextField
+              fullWidth
+              name="fullName"
+              label="Full Name"
+              value={newMember.fullName}
+              onChange={handleFieldChange}
+              sx={{ mb: 2 }}
+              InputProps={{ startAdornment: <Person /> }}
+            />
+            <TextField
+              fullWidth
+              name="email"
+              label="Email"
+              value={newMember.email}
+              onChange={handleFieldChange}
+              sx={{ mb: 2 }}
+              InputProps={{ startAdornment: <Email /> }}
+            />
+            <TextField
+              fullWidth
+              name="designation"
+              label="Designation"
+              value={newMember.designation}
+              onChange={handleFieldChange}
+              sx={{ mb: 2 }}
+              InputProps={{ startAdornment: <Work /> }}
+            />
+            <TextField
+              fullWidth
+              name="companyName"
+              label="Company Name"
+              value={newMember.companyName}
+              onChange={handleFieldChange}
+              sx={{ mb: 2 }}
+              InputProps={{ startAdornment: <Business /> }}
+            />
+            <TextField
+              fullWidth
+              name="contactNo"
+              label="Contact No"
+              value={newMember.contactNo}
+              onChange={handleFieldChange}
+              sx={{ mb: 2 }}
+              InputProps={{ startAdornment: <Phone /> }}
+            />
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
               <Avatar src={profilePreview} sx={{ width: 80, height: 80, mr: 2 }} />
               <IconButton component="label">
@@ -309,8 +310,12 @@ const VisitorTeamPage = () => {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleSaveMember} variant="contained" color="primary">Save</Button>
-            <Button onClick={() => setOpenDialog(false)} variant="outlined" color="secondary">Cancel</Button>
+            <Button onClick={handleSaveMember} variant="contained" color="primary">
+              Save
+            </Button>
+            <Button onClick={() => setOpenDialog(false)} variant="outlined" color="secondary">
+              Cancel
+            </Button>
           </DialogActions>
         </Dialog>
       </Paper>
