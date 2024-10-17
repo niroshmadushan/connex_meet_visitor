@@ -67,7 +67,7 @@ const MeetingDetailsPage = () => {
       return;
     }
     // Navigate to the confirmation page with selected data
-    navigate('/meeting-confirmation', {
+    navigate('/interview-confirmation', {
       state: {
         selectedCompany,
         selectedMeeting,

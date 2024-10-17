@@ -5,61 +5,80 @@ import {
   Paper,
   Grid,
   Button,
-  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
-import WifiIcon from '@mui/icons-material/Wifi';
-import LockIcon from '@mui/icons-material/Lock';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2'; // SweetAlert2 for confirmation
+import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import welcomeImage from '../assets/welcome-image.jpg';
 import successVoice from '../assets/audio/clip3.mp3'; // Voice clip for page load
 import finishVoice from '../assets/audio/clip4.mp3'; // Voice clip for Finish button
+import APIConnection from '../config'; // API config file
 
 const RegistrationSuccessPage = () => {
+  const [visitorData, setVisitorData] = useState([]); // Store fetched data
   const [showThankYou, setShowThankYou] = useState(false);
   const navigate = useNavigate();
-
-  const wifiUsername = "visitorWifi";
-  const wifiPassword = "wifi123";
-  const lockerKey = "Key12";
-
-  // Sample visitor data
-  const visitorData = [
-    { visitor: "Visitor 01", id: "ID01" },
-    { visitor: "Visitor 02", id: "ID02" },
-    { visitor: "Visitor 03", id: "ID03" },
-  ];
+  const { state } = useLocation();
+  const { selectedMeeting } = state || {};
 
   // Play success voice when the page loads
   useEffect(() => {
     const audio = new Audio(successVoice);
 
-    // Start playing the audio after 2 seconds
     const timer = setTimeout(() => {
       audio.play();
     }, 100); 
 
-    // Cleanup function to stop the audio when navigating away or unmounting
     return () => {
       clearTimeout(timer); // Stop the timer
-      audio.pause();       // Pause the audio
-      audio.currentTime = 0; // Reset the audio to the beginning
+      audio.pause();       
+      audio.currentTime = 0; 
     };
   }, []);
 
-  const handleFinish = () => {
-    setShowThankYou(true);
-    const audio = new Audio(finishVoice);
-    audio.play(); // Play finish voice clip
+  // Fetch visitor data from the API
+  useEffect(() => {
+    const fetchVisitorInfo = async () => {
+      try {
+        const response = await axios.get(`${APIConnection.mainapi}/visitor-info-reg`);
+        setVisitorData(response.data.data);
+      } catch (error) {
+        console.error('Failed to fetch visitor info:', error);
+      }
+    };
 
-    
-    
-    // Navigate to home page after 5 seconds
-    setTimeout(() => {
-      navigate('/');
-    }, 5000); 
+    fetchVisitorInfo();
+  }, []);
+
+  const handleFinish = () => {
+    // Show SweetAlert confirmation before finishing
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you want to finish the process?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, finish it!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setShowThankYou(true);
+        const audio = new Audio(finishVoice);
+        audio.play();
+
+        // Navigate to the home page after 5 seconds
+        setTimeout(() => {
+          navigate('/');
+        }, 5000);
+      }
+    });
   };
 
   return (
@@ -109,63 +128,49 @@ const RegistrationSuccessPage = () => {
             Registration Successful!
           </Typography>
 
-          <Grid container spacing={2} sx={{ textAlign: 'left', mb: 3 }}>
-            {/* WiFi Username */}
-            <Grid item xs={6} sx={{ display: 'flex', alignItems: 'center' }}>
-              <WifiIcon sx={{ color: '#fff', mr: 1 }} />
-              <Typography variant="h6" sx={{ color: '#fff' }}>
-                <strong>WiFi Username:</strong>
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="h6" sx={{ color: '#fff' }}>
-                {wifiUsername}
-              </Typography>
-            </Grid>
-
-            {/* WiFi Password */}
-            <Grid item xs={6} sx={{ display: 'flex', alignItems: 'center' }}>
-              <VpnKeyIcon sx={{ color: '#fff', mr: 1 }} />
-              <Typography variant="h6" sx={{ color: '#fff' }}>
-                <strong>WiFi Password:</strong>
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="h6" sx={{ color: '#fff' }}>
-                {wifiPassword}
-              </Typography>
-            </Grid>
-
-            {/* Visitor IDs */}
-            {visitorData.map((visitor, index) => (
-              <React.Fragment key={index}>
-                <Grid item xs={6} sx={{ display: 'flex', alignItems: 'center' }}>
-                  <AccountCircleIcon sx={{ color: '#fff', mr: 1 }} />
-                  <Typography variant="h6" sx={{ color: '#fff' }}>
-                    <strong>{visitor.visitor}:</strong>
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="h6" sx={{ color: '#fff' }}>
-                    {visitor.id}
-                  </Typography>
-                </Grid>
-              </React.Fragment>
-            ))}
-
-            {/* Locker Key */}
-            <Grid item xs={6} sx={{ display: 'flex', alignItems: 'center' }}>
-              <LockIcon sx={{ color: '#fff', mr: 1 }} />
-              <Typography variant="h6" sx={{ color: '#fff' }}>
-                <strong>Locker Key No:</strong>
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="h6" sx={{ color: '#fff' }}>
-                {lockerKey}
-              </Typography>
-            </Grid>
-          </Grid>
+          {/* Scrollable table for visitor data */}
+          <TableContainer
+            sx={{
+              maxHeight: '50vh', // Limit the height for scrollable content
+              overflowY: 'auto',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)', // Dark background
+              borderRadius: '10px',
+              mb: 3,
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: '#888', // Scrollbar thumb color
+                borderRadius: '10px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                backgroundColor: '#555', // Scrollbar thumb hover color
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: '#333', // Scrollbar track color
+              },
+            }}
+          >
+            <Table stickyHeader>
+              
+              <TableBody>
+                {visitorData.length > 0 ? (
+                  visitorData.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell sx={{ color: '#fff' }}>{item.key}</TableCell>
+                      <TableCell sx={{ color: '#fff' }}>{item.value}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={2} sx={{ color: '#fff', textAlign: 'center' }}>
+                      No data available.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {/* Finish Button */}
           <Box sx={{ textAlign: 'right' }}>

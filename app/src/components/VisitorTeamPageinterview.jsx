@@ -364,8 +364,8 @@ const handleComplete = async () => {
                   <TableRow>
                     <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Select</TableCell>
                     <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Full Name</TableCell>
-                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Designation</TableCell>
-                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Company name</TableCell>
+                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Email</TableCell>
+                    <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Interview Designation</TableCell>
                     <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Contact No</TableCell>
                     <TableCell sx={{ color: '#fff', backgroundColor: '#333' }}>Actions</TableCell>
                   </TableRow>
@@ -389,7 +389,7 @@ const handleComplete = async () => {
                           />
                         </TableCell>
                         <TableCell sx={{ color: '#fff' }}>{member.participant_name}</TableCell>
-                        <TableCell sx={{ color: '#fff' }}>{member.designation || 'N/A'}</TableCell>
+                        <TableCell sx={{ color: '#fff' }}>{member.participant_email || 'N/A'}</TableCell>
                         <TableCell sx={{ color: '#fff' }}>{member.company_name}</TableCell>
                         <TableCell sx={{ color: '#fff' }}>{member.contact_no || 'N/A'}</TableCell>
                         <TableCell>
@@ -470,7 +470,7 @@ const handleComplete = async () => {
             <TextField
               fullWidth
               name="companyName"
-              label="Company Name"
+              label="Interview Designation"
               value={newMember.companyName}
               onChange={handleFieldChange}
               sx={{ mb: 2 }}

@@ -44,7 +44,7 @@ const PleaseWaitPage = () => {
           } catch (deleteError) {
             console.error('Failed to delete temporary data:', deleteError);
           }
-          navigate('/registration-success'); // Redirect to success page
+          navigate('/registration-success', { state: { selectedMeeting } }); // Redirect to success page
         } else if (visitorData.status === 1) {
           setStatus(1); // Update status to pending
         } else {
