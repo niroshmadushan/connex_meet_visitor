@@ -67,7 +67,7 @@ const MeetingDetailsPage = () => {
       return;
     }
     // Navigate to the confirmation page with selected data
-    navigate('/meeting-confirmation', {
+    navigate('/connex_meet_visitor/meeting-confirmation', {
       state: {
         selectedCompany,
         selectedMeeting,

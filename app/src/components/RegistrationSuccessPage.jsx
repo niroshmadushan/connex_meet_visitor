@@ -75,7 +75,7 @@ const RegistrationSuccessPage = () => {
 
         // Navigate to the home page after 5 seconds
         setTimeout(() => {
-          navigate('/');
+          navigate('/connex_meet_visitor/');
         }, 5000);
       }
     });

@@ -32,24 +32,24 @@ const App = () => {
       <Router>
         <Header />
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/purpose-selection" element={<PurposeSelection />} />
-          <Route path="/meeting-details" element={<MeetingDetailsPage  />} />
-          <Route path="/meeting-confirmation" element={<MeetingConfirmationPage  />} />
+          <Route path="/connex_meet_visitor/" element={<HomePage />} />
+          <Route path="/connex_meet_visitor/purpose-selection" element={<PurposeSelection />} />
+          <Route path="/connex_meet_visitor/meeting-details" element={<MeetingDetailsPage  />} />
+          <Route path="/connex_meet_visitor/meeting-confirmation" element={<MeetingConfirmationPage  />} />
           
        
-          <Route path="/visitor-team" element={<VisitorTeamPage  />} />
-          <Route path="/visitor-team-interview" element={<VisitorTeamPageinterview  />} />
-          <Route path="/visitor-team-sesion" element={<VisitorTeamPagesesion  />} />
-          <Route path="/visitor-team-service" element={<VisitorTeamPageservice  />} />
-          <Route path="/please-wait" element={<PleaseWaitPage  />} />
-          <Route path="/session-details" element={<SessionDetailsPage />}/>
-          <Route path="/session-confirmation" element={<SessionConfirmationPage />} /> {/* Add the new route */}
-          <Route path="/registration-success" element={<RegistrationSuccessPage  />} />
-          <Route path="/interview-details" element={<InterviewDetailsPage />} />
-          <Route path="/interview-confirmation" element={<InterviewConfirmationPage />} />
-          <Route path="/service-details" element={<ServiceDetailsPage />} /> {/* New route */}
-        <Route path="/service-confirmation" element={<ServiceConfirmationPage />} /> {/* New route */}
+          <Route path="/connex_meet_visitor/visitor-team" element={<VisitorTeamPage  />} />
+          <Route path="/connex_meet_visitor/visitor-team-interview" element={<VisitorTeamPageinterview  />} />
+          <Route path="/connex_meet_visitor/visitor-team-sesion" element={<VisitorTeamPagesesion  />} />
+          <Route path="/connex_meet_visitor/visitor-team-service" element={<VisitorTeamPageservice  />} />
+          <Route path="/connex_meet_visitor/please-wait" element={<PleaseWaitPage  />} />
+          <Route path="/connex_meet_visitor/session-details" element={<SessionDetailsPage />}/>
+          <Route path="/connex_meet_visitor/session-confirmation" element={<SessionConfirmationPage />} /> {/* Add the new route */}
+          <Route path="/connex_meet_visitor/registration-success" element={<RegistrationSuccessPage  />} />
+          <Route path="/connex_meet_visitor/interview-details" element={<InterviewDetailsPage />} />
+          <Route path="/connex_meet_visitor/interview-confirmation" element={<InterviewConfirmationPage />} />
+          <Route path="/connex_meet_visitor/service-details" element={<ServiceDetailsPage />} /> {/* New route */}
+        <Route path="/connex_meet_visitor/service-confirmation" element={<ServiceConfirmationPage />} /> {/* New route */}
         </Routes>
         <Footer />
       </Router>

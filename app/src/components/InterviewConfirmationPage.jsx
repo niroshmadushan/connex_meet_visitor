@@ -31,7 +31,7 @@ const InterviewConfirmationPage = () => {
   
     const handleConfirmClick = () => {
         // Redirect to the "Please Wait" page
-        navigate('/please-wait');
+        navigate('/connex_meet_visitor/please-wait');
     };
 
     return (

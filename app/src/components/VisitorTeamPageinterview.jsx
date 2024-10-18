@@ -284,7 +284,7 @@ const handleComplete = async () => {
 
         // Step 3: Show success message and redirect to the success page
         Swal.fire('Completed!', 'The process has been completed successfully.', 'success');
-        navigate('/please-wait', { state: { selectedMeeting } });
+        navigate('/connex_meet_visitor/please-wait', { state: { selectedMeeting } });
       } catch (error) {
         console.error('Failed to complete process:', error);
         Swal.fire({

@@ -32,7 +32,7 @@ const ServiceConfirmationPage = () => {
 
   const handleConfirmClick = () => {
     // Navigate to the please wait page
-    navigate('/visitor-team-service');
+    navigate('/connex_meet_visitor/visitor-team-service');
   };
 
   return (

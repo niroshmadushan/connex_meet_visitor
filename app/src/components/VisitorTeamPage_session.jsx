@@ -125,7 +125,7 @@ const VisitorTeamPage = () => {
   };
 
   const handleComplete = () => {
-    navigate('/please-wait');
+    navigate('/connex_meet_visitor/please-wait');
   };
 
   return (

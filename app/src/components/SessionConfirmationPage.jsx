@@ -30,7 +30,7 @@ const SessionConfirmationPage = () => {
 
   const handleConfirmClick = () => {
     // Proceed to the next page or confirmation process
-    navigate('/visitor-team-sesion', { state: { selectedCompany, selectedService } });
+    navigate('/connex_meet_visitor/visitor-team-sesion', { state: { selectedCompany, selectedService } });
   };
 
   return (

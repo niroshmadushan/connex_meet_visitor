@@ -48,7 +48,7 @@ const MeetingConfirmationPage = () => {
   }, [selectedMeeting]); // Depend on selectedMeeting
 
   const handleNextClick = () => {
-    navigate('/visitor-team', { state: { selectedCompany, selectedMeeting } });
+    navigate('/connex_meet_visitor/visitor-team', { state: { selectedCompany, selectedMeeting } });
   };
 
   return (
