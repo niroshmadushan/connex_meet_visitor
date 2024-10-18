@@ -3,7 +3,7 @@ import { Box, Typography, Button, Paper, Grid, MenuItem, Select, FormControl, In
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import welcomeImage from '../assets/welcome-image.jpg';
-import meetingVoice from '../assets/audio/meeting-voice1.mp3';
+import meetingVoice from '../assets/audio/service2.mp3';
 import APIConnection from '../config';
 import axios from 'axios';
 

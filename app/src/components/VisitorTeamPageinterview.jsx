@@ -28,6 +28,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2'; // SweetAlert2
 import APIConnection from '../config'; // API config file
 import welcomeImage from '../assets/welcome-image.jpg';
+import meetingVoice from '../assets/audio/clip1.mp3'
 
 const VisitorTeamPage = () => {
   const [team, setTeam] = useState([]); // Store participants
@@ -49,6 +50,17 @@ const VisitorTeamPage = () => {
   const [selectedMembers, setSelectedMembers] = useState([]); // Track selected checkboxes
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const audio = new Audio(meetingVoice);
+    const timer = setTimeout(() => audio.play(), 1000); // Play after 1 second
+
+    return () => {
+      clearTimeout(timer);
+      audio.pause();
+      audio.currentTime = 0; // Reset audio
+    };
+  }, []);
 
   useEffect(() => {
     fetchParticipants(selectedMeeting);

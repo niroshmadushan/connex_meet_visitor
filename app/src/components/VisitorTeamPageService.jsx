@@ -28,6 +28,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2'; // SweetAlert2
 import APIConnection from '../config'; // API config file
 import welcomeImage from '../assets/welcome-image.jpg';
+import meetingVoice from '../assets/audio/clip1.mp3'
 
 const VisitorTeamPage = () => {
   const [team, setTeam] = useState([]); // Store participants
@@ -54,6 +55,17 @@ const VisitorTeamPage = () => {
     fetchParticipants(selectedMeeting);
   }, [selectedMeeting]);
 
+
+  useEffect(() => {
+    const audio = new Audio(meetingVoice);
+    const timer = setTimeout(() => audio.play(), 1000); // Play after 1 second
+
+    return () => {
+      clearTimeout(timer);
+      audio.pause();
+      audio.currentTime = 0; // Reset audio
+    };
+  }, []);
   useEffect(() => {
     // Filter the team based on the search term
     if (searchTerm) {
@@ -101,10 +113,10 @@ const VisitorTeamPage = () => {
 
   // Validate form data before saving
   const validateForm = () => {
-    const { fullName, email, designation, contactNo, companyName, photo } = newMember;
+    const { fullName, email, contactNo, companyName, photo } = newMember;
     setOpenDialog(false);
     // Check if any field is empty
-    if (!fullName || !email || !designation || !contactNo || !companyName || !photo) {
+    if (!fullName || !email || !contactNo || !companyName || !photo) {
       Swal.fire({
         title: 'Error',
         text: 'All fields are required. Please fill in all the details.',
@@ -469,12 +481,12 @@ const handleComplete = async () => {
             />
             <TextField
               fullWidth
-              name="companyName"
-              label="Company Name"
-              value={newMember.companyName}
+              name="designation"
+              label="Designation"
+              value={newMember.designation}
               onChange={handleFieldChange}
               sx={{ mb: 2 }}
-              InputProps={{ startAdornment: <Business /> }}
+              InputProps={{ startAdornment: <Work /> }}
             />
             <TextField
               fullWidth
