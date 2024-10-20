@@ -64,7 +64,7 @@ const HomePage = () => {
           component={motion.button}
           whileHover={{ scale: 1.1, boxShadow: '0px 0px 15px rgba(255, 255, 255, 0.5)', borderRadius: '50px' }} // Smooth hover animation
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/purpose-selection')} // Navigate to the new page
+          onClick={() => navigate('/connex_meet_visitor/purpose-selection')} // Navigate to the new page
           variant="contained"
           color="primary"
           sx={{ marginTop: '20px', padding: '15px 30px', fontSize: '1rem', borderRadius: '30px', transition: 'all 0.3s ease-in-out' }}
